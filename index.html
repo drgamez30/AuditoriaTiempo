@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoría de Proceso</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f19; /* Fondo muy oscuro premium */
+            color: #e2e8f0;
+        }
+        
+        /* Animación suave para cambios de valores */
+        .val-transition {
+            transition: color 0.3s ease;
+        }
+
+        /* Ocultar flechas de los inputs numéricos */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+<!-- Contenedor Principal -->
+<div class="w-full max-w-md bg-[#161b26] rounded-2xl shadow-2xl border border-slate-800 p-6 relative overflow-hidden">
+    
+    <!-- Decoración sutil de fondo -->
+    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
+
+    <div class="text-center mb-6">
+        <h2 class="text-2xl font-bold text-white tracking-tight flex items-center justify-center gap-2">
+            <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            Auditoría de Proceso
+        </h2>
+        <p class="text-slate-400 text-xs uppercase tracking-wider mt-1">Control de Proyección en Tiempo Real</p>
+    </div>
+    
+    <!-- Configuración -->
+    <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="bg-[#0b0f19] p-3 rounded-xl border border-slate-700/50">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Ciclo Estándar (seg)</label>
+            <input type="number" id="inputCiclo" value="38" min="1" class="w-full bg-transparent text-white font-semibold text-lg border-none focus:ring-0 p-0 text-center">
+        </div>
+        <div class="bg-[#0b0f19] p-3 rounded-xl border border-slate-700/50">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Lote Total a Evaluar</label>
+            <input type="number" id="inputMeta" value="250" min="1" class="w-full bg-transparent text-white font-semibold text-lg border-none focus:ring-0 p-0 text-center">
+        </div>
+    </div>
+    
+    <!-- Botón Principal -->
+    <button id="btnPrincipal" onclick="registrar()" class="w-full py-4 rounded-xl text-lg font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-900/50 transition-all duration-300 transform active:scale-95 mb-6">
+        🏁 INICIAR MUESTREO
+    </button>
+
+    <!-- Grid de KPIs -->
+    <div class="grid grid-cols-2 gap-3">
+        
+        <div class="flex flex-col items-center justify-center p-4 bg-slate-800/60 rounded-xl border border-slate-700 shadow-sm">
+            <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Muestreadas</div>
+            <div id="prod" class="text-3xl font-bold text-white mt-1">0</div>
+        </div>
+        
+        <div class="flex flex-col items-center justify-center p-4 bg-slate-800/60 rounded-xl border border-slate-700 shadow-sm">
+            <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Ciclo Promedio</div>
+            <div id="cicloProm" class="text-3xl font-bold text-white mt-1">0.0s</div>
+        </div>
+        
+        <div id="cardCiclo" class="flex flex-col items-center justify-center p-4 bg-slate-800/60 rounded-xl border border-slate-700 shadow-sm transition-colors duration-300">
+            <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Último Ciclo</div>
+            <div id="ciclo" class="text-3xl font-bold text-white mt-1 val-transition">0.0s</div>
+        </div>
+        
+        <div id="cardPerf" class="flex flex-col items-center justify-center p-4 bg-slate-800/60 rounded-xl border border-slate-700 shadow-sm transition-colors duration-300">
+            <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Eficiencia Lote</div>
+            <div id="perf" class="text-3xl font-bold text-white mt-1 val-transition">---</div>
+        </div>
+        
+        <div class="col-span-2 flex flex-col items-center justify-center p-5 bg-[#0b0f19] rounded-xl border border-slate-700 shadow-inner mt-2">
+            <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide flex items-center gap-1">
+                <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Tiempo Restante Proyectado
+            </div>
+            <div id="tiempoRestante" class="text-4xl font-black text-white mt-2 tracking-wider">--:--:--</div>
+            <div id="horaFin" class="text-xs text-slate-500 mt-2 font-medium">Hora estimada de fin: Esperando muestras...</div>
+        </div>
+    </div>
+
+    <!-- Botón Reiniciar -->
+    <button onclick="abrirModal()" class="w-full mt-6 py-3 bg-transparent border border-slate-600 text-slate-400 rounded-lg hover:bg-slate-800 hover:text-white transition-colors text-sm font-semibold flex items-center justify-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        Nueva Auditoría
+    </button>
+</div>
+
+<!-- Modal de Confirmación Personalizado -->
+<div id="modalReset" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity">
+    <div class="bg-[#161b26] p-6 rounded-2xl border border-slate-700 shadow-2xl max-w-sm w-full text-center">
+        <div class="w-16 h-16 rounded-full bg-rose-500/20 text-rose-500 flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+        <h3 class="text-xl font-bold text-white mb-2">¿Reiniciar Auditoría?</h3>
+        <p class="text-slate-400 text-sm mb-6">Se borrarán todos los datos recolectados y promedios actuales de esta muestra.</p>
+        <div class="flex gap-3">
+            <button onclick="cerrarModal()" class="flex-1 py-3 bg-slate-800 text-white rounded-xl font-semibold hover:bg-slate-700 transition">Cancelar</button>
+            <button onclick="confirmarReinicio()" class="flex-1 py-3 bg-rose-600 text-white rounded-xl font-semibold hover:bg-rose-500 shadow-lg shadow-rose-900/50 transition">Sí, reiniciar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let piezas = 0;
+    let ultimoTiempo = null;
+    let iniciado = false;
+    let historialTiempos = [];
+
+    // Clases base para mantener el diseño al cambiar estados
+    const baseCardClasses = "flex flex-col items-center justify-center p-4 bg-slate-800/60 rounded-xl border shadow-sm transition-colors duration-300";
+
+    function registrar() {
+        const ahora = Date.now();
+        const btn = document.getElementById('btnPrincipal');
+        const cicloTeorico = parseFloat(document.getElementById('inputCiclo').value) || 38;
+        const meta = parseInt(document.getElementById('inputMeta').value) || 250;
+
+        // PRIMER CLIC: Arranca el tiempo maestro de la auditoría
+        if (!iniciado) {
+            iniciado = true;
+            ultimoTiempo = ahora;
+            btn.innerText = "➕ ¡PIEZA LISTA!";
+            // Cambio de estilo a verde para indicar estado activo
+            btn.className = "w-full py-4 rounded-xl text-lg font-bold text-white bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 shadow-lg shadow-green-900/50 transition-all duration-300 transform active:scale-95 mb-6";
+            return;
+        }
+
+        // Prevenir dobles clics accidentales (debounce 500ms)
+        if ((ahora - ultimoTiempo) < 500) return;
+
+        // SIGUIENTES CLICS: Acumular datos del muestreo
+        piezas++;
+        const segundosCiclo = (ahora - ultimoTiempo) / 1000;
+        historialTiempos.push(segundosCiclo);
+
+        // Calcular promedio real acumulado de la muestra
+        const sumaTiempos = historialTiempos.reduce((a, b) => a + b, 0);
+        const promedioReal = sumaTiempos / historialTiempos.length;
+
+        // Piezas que faltan por fabricar en el lote total
+        const piezasRestantes = Math.max(0, meta - piezas);
+
+        // Calcular % de Eficiencia basado en el promedio estable del muestreo
+        const porcentajeRendimiento = (cicloTeorico / promedioReal) * 100;
+        
+        // Proyectar Tiempo Restante basado en el promedio real de tus piezas
+        const tiempoRestanteSegundos = piezasRestantes * promedioReal;
+        const hrs = Math.floor(tiempoRestanteSegundos / 3600);
+        const mins = Math.floor((tiempoRestanteSegundos % 3600) / 60);
+        const segs = Math.floor(tiempoRestanteSegundos % 60);
+
+        // Calcular hora exacta del reloj para el final de la producción
+        const fechaTermino = new Date(ahora + (tiempoRestanteSegundos * 1000));
+        const horaFormato = fechaTermino.toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'});
+
+        // DOM Elements
+        const elCiclo = document.getElementById('ciclo');
+        const cardCiclo = document.getElementById('cardCiclo');
+        const elPerf = document.getElementById('perf');
+        const cardPerf = document.getElementById('cardPerf');
+
+        // Actualizar interfaz básica
+        document.getElementById('prod').innerText = piezas;
+        document.getElementById('cicloProm').innerText = promedioReal.toFixed(1) + "s";
+        elCiclo.innerText = segundosCiclo.toFixed(1) + "s";
+        
+        // Lógica visual: Tarjeta de ciclo individual
+        // Consideramos "bueno" estar dentro del ciclo teórico + 1.5s
+        if (segundosCiclo <= (cicloTeorico + 1.5)) {
+            cardCiclo.className = baseCardClasses + " border-emerald-500/50 bg-emerald-900/10";
+            elCiclo.className = "text-3xl font-bold text-emerald-400 mt-1 val-transition";
+        } else {
+            cardCiclo.className = baseCardClasses + " border-rose-500/50 bg-rose-900/10";
+            elCiclo.className = "text-3xl font-bold text-rose-500 mt-1 val-transition";
+        }
+
+        // Lógica visual: Eficiencia global del muestreo
+        elPerf.innerText = Math.min(porcentajeRendimiento, 150).toFixed(0) + "%";
+        if (porcentajeRendimiento >= 90) {
+            cardPerf.className = baseCardClasses + " border-emerald-500/50 bg-emerald-900/10";
+            elPerf.className = "text-3xl font-bold text-emerald-400 mt-1 val-transition";
+        } else {
+            cardPerf.className = baseCardClasses + " border-rose-500/50 bg-rose-900/10";
+            elPerf.className = "text-3xl font-bold text-rose-500 mt-1 val-transition";
+        }
+
+        // Actualizar Tiempos estimados totales
+        document.getElementById('tiempoRestante').innerText = 
+            `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${segs.toString().padStart(2, '0')}`;
+        document.getElementById('horaFin').innerText = `Hora estimada de fin: aprox. ${horaFormato}`;
+
+        ultimoTiempo = ahora;
+    }
+
+    // Funciones del Modal Personalizado
+    function abrirModal() {
+        document.getElementById('modalReset').classList.remove('hidden');
+    }
+
+    function cerrarModal() {
+        document.getElementById('modalReset').classList.add('hidden');
+    }
+
+    function confirmarReinicio() {
+        cerrarModal();
+        
+        // Reset Variables
+        piezas = 0;
+        ultimoTiempo = null;
+        iniciado = false;
+        historialTiempos = [];
+        
+        // DOM Elements Restauration
+        const btn = document.getElementById('btnPrincipal');
+        btn.innerText = "🏁 INICIAR MUESTREO";
+        btn.className = "w-full py-4 rounded-xl text-lg font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-900/50 transition-all duration-300 transform active:scale-95 mb-6";
+        
+        document.getElementById('prod').innerText = "0";
+        document.getElementById('cicloProm').innerText = "0.0s";
+        
+        const elCiclo = document.getElementById('ciclo');
+        const cardCiclo = document.getElementById('cardCiclo');
+        elCiclo.innerText = "0.0s";
+        elCiclo.className = "text-3xl font-bold text-white mt-1 val-transition";
+        cardCiclo.className = baseCardClasses + " border-slate-700";
+        
+        const elPerf = document.getElementById('perf');
+        const cardPerf = document.getElementById('cardPerf');
+        elPerf.innerText = "---";
+        elPerf.className = "text-3xl font-bold text-white mt-1 val-transition";
+        cardPerf.className = baseCardClasses + " border-slate-700";
+        
+        document.getElementById('tiempoRestante').innerText = "--:--:--";
+        document.getElementById('horaFin').innerText = "Hora estimada de fin: Esperando muestras...";
+    }
+</script>
+</body>
+</html>
